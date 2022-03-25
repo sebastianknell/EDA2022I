@@ -1,24 +1,29 @@
-#include <algorithm> 
+#include <algorithm>
+#include <iostream>
 #include "rbtree.h"
 
-Nodo::Nodo(int dato){
+Nodo::Nodo(int dato) {
     this->dato = dato;
     color = RED;
-    
-    left   = nullptr;
-    right  = nullptr;
+
+    left = nullptr;
+    right = nullptr;
     father = nullptr;
 }
 
+RBtree::RBtree() {
+    root = nullptr;
+}
 
+RBtree::~RBtree() {
+}
 
-
-int RBtree::getColor(Nodo* &puntero){
+int RBtree::getColor(Nodo *&puntero) {
     if (puntero == nullptr) return BLACK;
     return puntero->color;
 }
 
-void RBtree::setColor(Nodo* &puntero, int color){
+void RBtree::setColor(Nodo *&puntero, int color) {
     if (puntero == nullptr) return;
     puntero->color = color;
 }
@@ -32,23 +37,23 @@ void RBtree::setColor(Nodo* &puntero, int color){
  * 
  * La función se aplica a X
  */
-void RBtree::rotarIzquierda(Nodo* &puntero){
+void RBtree::rotarIzquierda(Nodo *&puntero) {
     // Nodo Y
     Nodo *hijoDerecho = puntero->right;
-    
-    
+
+
     puntero->right = hijoDerecho->left;         // Asignar como hijo derecho de X a B
     if (puntero->right != nullptr)
         puntero->right->father = puntero;       // Asignar como nuevo padre de B a X
 
 
     hijoDerecho->father = puntero->father;      // Asignar que el nuevo padre de Y sea el padre de X
-                                                // Esto es para conectar con el resto del arbol
+    // Esto es para conectar con el resto del arbol
     // Asignar la Y como hijo derecho o izquierdo 
     // En el paso anterior contectamos a Y con el resto del arbol, ahora Y será asignado como hijo del nodo superior
     if (puntero->father == nullptr)
         root = hijoDerecho;                     // Si no hay padre, significa que llegamos a la raiz
-    else if (puntero == puntero->father->left)  
+    else if (puntero == puntero->father->left)
         puntero->father->left = hijoDerecho;    // Antes de la rotacion, X era el hijo izquiero
     else
         puntero->father->right = hijoDerecho;   // Antes de la rotacion, X era el hijo derecho
@@ -66,9 +71,9 @@ void RBtree::rotarIzquierda(Nodo* &puntero){
  * 
  * La función se aplica a Y
  */
-void RBtree::rotarDerecha(Nodo* &puntero){
+void RBtree::rotarDerecha(Nodo *&puntero) {
     // Nodo X
-    Nodo *hijoIzquierdo = puntero->left;        
+    Nodo *hijoIzquierdo = puntero->left;
 
 
     puntero->left = hijoIzquierdo->right;       // Asignar como hijo izquierdo de Y a B
@@ -77,7 +82,7 @@ void RBtree::rotarDerecha(Nodo* &puntero){
 
 
     hijoIzquierdo->father = puntero->father;    // Asignar que el nuevo padre de X sea el padre Y
-                                                // Esto es para conectar con el resto del arbol
+    // Esto es para conectar con el resto del arbol
     // Asignar la X como hijo derecho o izquierdo 
     // En el paso anterior contectamos a X con el resto del arbol, ahora X será asignado como hijo del nodo superior
     if (puntero->father == nullptr)
@@ -93,46 +98,44 @@ void RBtree::rotarDerecha(Nodo* &puntero){
 }
 
 
-
-Nodo* RBtree::insertarNodo(Nodo* &padre, Nodo* &puntero){
+Nodo *RBtree::insertarNodo(Nodo *&padre, Nodo *&puntero) {
     // Arbol vacio
     if (padre == nullptr) return puntero;
-    
+
     // Si el nuevo numero es menor al padre
-    if(puntero->dato < padre->dato){
-        padre->left = insertarNodo(padre->left,puntero);
+    if (puntero->dato < padre->dato) {
+        padre->left = insertarNodo(padre->left, puntero);
         padre->left->father = padre;
     }
-    // Si el nuevo numero es mayo al padre
-    else if (puntero->dato > padre->dato){
-        padre->right = insertarNodo(padre->right,puntero);
+        // Si el nuevo numero es mayo al padre
+    else if (puntero->dato > padre->dato) {
+        padre->right = insertarNodo(padre->right, puntero);
         padre->right->father = padre;
     }
     return padre;
 }
 
 
-void RBtree::corregirArbol(Nodo* &puntero){
-    Nodo* padre  = nullptr;
-    Nodo* abuelo = nullptr;
-    while ( puntero != root &&  getColor(puntero)==RED && getColor(puntero->father)==RED ){
-        padre  = puntero->father;
-        abuelo = padre  ->father;
+void RBtree::corregirArbol(Nodo *&puntero) {
+    Nodo *padre = nullptr;
+    Nodo *abuelo = nullptr;
+    while (puntero != root && getColor(puntero) == RED && getColor(puntero->father) == RED) {
+        padre = puntero->father;
+        abuelo = padre->father;
 
         // El padre esta a la izquierda
-        if (padre == abuelo->left){
-            Nodo* tio = abuelo->right;
+        if (padre == abuelo->left) {
+            Nodo *tio = abuelo->right;
 
             // CASO I: padre y tio son rojos
-            if(  getColor(tio) ==RED ){
-                setColor(padre ,BLACK);
-                setColor(tio   ,BLACK);
-                setColor(abuelo,RED  );
-                puntero = padre;
-            }
-            else{
+            if (getColor(tio) == RED) {
+                setColor(padre, BLACK);
+                setColor(tio, BLACK);
+                setColor(abuelo, RED);
+                puntero = abuelo;
+            } else {
                 // CASO II: padre y el hijo tienen distintas direcciones
-                if(puntero == padre->right){
+                if (puntero == padre->right) {
                     rotarIzquierda(padre);
                     puntero = padre;
                     padre = puntero->father;
@@ -140,25 +143,24 @@ void RBtree::corregirArbol(Nodo* &puntero){
 
                 // CASO III: padre y el hijo tienen la misma dirección
                 rotarDerecha(abuelo);
-                std::swap(padre->color,abuelo->color);
+                std::swap(padre->color, abuelo->color);
                 puntero = padre;
             }
         }
 
-        // El padre esta a la derecha
-        else{
-            Nodo* tio = abuelo->left;
+            // El padre esta a la derecha
+        else {
+            Nodo *tio = abuelo->left;
 
             // CASO I: padre y tio son rojos
-            if(  getColor(tio) ==RED ){
-                setColor(padre ,BLACK);
-                setColor(tio   ,BLACK);
-                setColor(abuelo,RED  );
-                puntero = padre;
-            }
-            else{
+            if (getColor(tio) == RED) {
+                setColor(padre, BLACK);
+                setColor(tio, BLACK);
+                setColor(abuelo, RED);
+                puntero = abuelo;
+            } else {
                 // CASO II: padre y el hijo tienen distintas direcciones
-                if(puntero == padre->left){
+                if (puntero == padre->left) {
                     rotarDerecha(padre);
                     puntero = padre;
                     padre = puntero->father;
@@ -166,23 +168,101 @@ void RBtree::corregirArbol(Nodo* &puntero){
 
                 // CASO III: padre y el hijo tienen la misma dirección
                 rotarIzquierda(abuelo);
-                std::swap(padre->color,abuelo->color);
+                std::swap(padre->color, abuelo->color);
                 puntero = padre;
             }
         }
     }
-    
+    setColor(root, BLACK);
 }
 
-void RBtree::insertar(int dato){
+void RBtree::insertar(int dato) {
     Nodo *puntero = new Nodo(dato);
-    root = insertarNodo(root,puntero);
+    root = insertarNodo(root, puntero);
     corregirArbol(puntero);
 }
 
-RBtree::RBtree(){
-    root = nullptr;
+void RBtree::eliminarNodo(int dato) {
+    // Encontrar nodo
+    if (dato == root->dato) {
+        delete root;
+        root = nullptr;
+        return;
+    }
+    auto curr = root;
+    while (curr) {
+        if (dato < curr->dato) curr = curr->left;
+        if (dato > curr->dato) curr = curr->right;
+        else break;
+    }
+    if (curr->dato != dato) return;
+
+    // Caso 1: No tiene hijos
+    if (!curr->left && !curr->right) {
+        // Eliminar referencia del padre
+        auto father = curr->father;
+        if (curr == father->right) {
+            father->right = nullptr;
+        }
+        else father->left = nullptr;
+        // Eliminar nodo
+        delete curr;
+        return;
+    }
+    // Caso 2: Tiene un hijo
+    if (!curr->left != !curr->right) {
+        // Unir al padre con el hijo
+        auto child = curr->left ? curr->left : curr->right;
+        auto father = curr->father;
+        if (curr == father->right) {
+            father->right = child;
+        }
+        else father->left = child;
+        // Eliminar nodo
+        delete curr;
+        return;
+    }
+    // Caso 3: Tiene 2 hijos
+    else {
+        // Encontrar sucesor
+        auto sucesor = curr->right;
+        while (sucesor) sucesor = sucesor->left;
+
+    }
 }
 
-RBtree::~RBtree(){
+void RBtree::preOrderRec(Nodo *&puntero) {
+    if (!puntero) return;
+    std::cout << puntero->dato << " ";
+    preOrderRec(puntero->left);
+    preOrderRec(puntero->right);
+}
+
+void RBtree::postOrderRec(Nodo *&puntero) {
+    if (!puntero) return;
+    preOrderRec(puntero->left);
+    preOrderRec(puntero->right);
+    std::cout << puntero->dato << " ";
+}
+
+void RBtree::inOrderRec(Nodo *&puntero) {
+    if (!puntero) return;
+    preOrderRec(puntero->left);
+    std::cout << puntero->dato << " ";
+    preOrderRec(puntero->right);
+}
+
+void RBtree::preOrder() {
+    preOrderRec(root);
+    std::cout << std::endl;
+}
+
+void RBtree::postOrder() {
+    postOrderRec(root);
+    std::cout << std::endl;
+}
+
+void RBtree::inOrder() {
+    inOrderRec(root);
+    std::cout << std::endl;
 }
