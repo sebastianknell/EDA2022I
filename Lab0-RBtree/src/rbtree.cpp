@@ -182,6 +182,65 @@ void RBtree::insertar(int dato) {
     corregirArbol(puntero);
 }
 
+void RBtree::eliminarDoubleBlack(Nodo *&nodo) {
+    if (nodo->color != DOUBLE_BLACK) return;
+    // Caso 2
+    if (nodo == root) {
+        nodo->color = BLACK;
+        return;
+    }
+    // Encontrar hermano
+    auto padre = nodo->father;
+    auto hermano = padre->left == nodo ? padre->right : padre->left;
+    if (getColor(hermano) == BLACK) {
+        // Caso 3: Ambos hijos del hermano son negros
+        if (getColor(hermano->left) == BLACK && getColor(hermano->right) == BLACK) {
+            if (padre->left == nodo) padre->left = nullptr;
+            else padre->right = nullptr;
+            delete nodo;
+            padre->color = padre->color == RED ? BLACK : DOUBLE_BLACK;
+            setColor(hermano, RED);
+            if (padre->color == DOUBLE_BLACK) eliminarDoubleBlack(padre);
+        }
+        else {
+            Nodo* hijo_cercano = nullptr;
+            Nodo* hijo_lejano = nullptr;
+            if (nodo == padre->left) {
+                hijo_cercano = hermano->left;
+                hijo_lejano = hermano->right;
+            }
+            else {
+                hijo_cercano = hermano->right;
+                hijo_lejano = hermano->left;
+            }
+            // Caso 5: El hijo lejano del hermano es negro
+            if (getColor(hijo_lejano) == BLACK) {
+                std::swap(hermano->color, hijo_cercano->color);
+                if (nodo == padre->left) rotarDerecha(hermano);
+                else rotarIzquierda(hermano);
+                eliminarDoubleBlack(nodo); // Pasar al caso 6
+            }
+
+            // Caso 6: El hijo lejano del hermano es rojo
+            if (getColor(hijo_lejano) == RED) {
+                std::swap(padre->color, hermano->color);
+                if (nodo == padre->left) rotarIzquierda(padre);
+                else rotarDerecha(padre);
+                setColor(nodo, BLACK);
+                setColor(hijo_lejano, BLACK);
+            }
+        }
+
+    }
+    else {
+        // Caso 4: El hermano es rojo
+        std::swap(padre->color, hermano->color);
+        if (nodo == padre->left) rotarIzquierda(padre);
+        else rotarDerecha(padre);
+        eliminarDoubleBlack(nodo);
+    }
+}
+
 void RBtree::eliminarNodo(int dato) {
     // Encontrar nodo
     if (dato == root->dato) {
@@ -191,43 +250,59 @@ void RBtree::eliminarNodo(int dato) {
     }
     auto curr = root;
     while (curr) {
-        if (dato < curr->dato) curr = curr->left;
-        if (dato > curr->dato) curr = curr->right;
+        if (curr->left && dato < curr->dato) curr = curr->left;
+        if (curr->right && dato > curr->dato) curr = curr->right;
         else break;
     }
-    if (curr->dato != dato) return;
+    if (!curr || curr->dato != dato) return;
 
     // Caso 1: No tiene hijos
     if (!curr->left && !curr->right) {
-        // Eliminar referencia del padre
-        auto father = curr->father;
-        if (curr == father->right) {
-            father->right = nullptr;
+        if (curr->color == RED) {
+            // Eliminar referencia del padre
+            auto father = curr->father;
+            if (curr == father->right) {
+                father->right = nullptr;
+            }
+            else father->left = nullptr;
+            // Eliminar nodo
+            delete curr;
+            return;
         }
-        else father->left = nullptr;
-        // Eliminar nodo
-        delete curr;
-        return;
+        else {
+            curr->color = DOUBLE_BLACK;
+            eliminarDoubleBlack(curr);
+        }
     }
     // Caso 2: Tiene un hijo
     if (!curr->left != !curr->right) {
-        // Unir al padre con el hijo
-        auto child = curr->left ? curr->left : curr->right;
-        auto father = curr->father;
-        if (curr == father->right) {
-            father->right = child;
+        if (curr->color == RED) {
+            // Unir al padre con el hijo
+            auto child = curr->left ? curr->left : curr->right;
+            auto father = curr->father;
+            if (curr == father->right) {
+                father->right = child;
+            }
+            else father->left = child;
+            // Eliminar nodo
+            delete curr;
+            return;
         }
-        else father->left = child;
-        // Eliminar nodo
-        delete curr;
-        return;
+        else {
+            curr->color = DOUBLE_BLACK;
+            eliminarDoubleBlack(curr);
+        }
     }
     // Caso 3: Tiene 2 hijos
     else {
         // Encontrar sucesor
         auto sucesor = curr->right;
-        while (sucesor) sucesor = sucesor->left;
-
+        while (sucesor->left) sucesor = sucesor->left;
+        auto tempDato = sucesor->dato;
+        // Eliminar nodo recursivamente
+        eliminarNodo(tempDato);
+        // Copiar dato
+        curr->dato = tempDato;
     }
 }
 

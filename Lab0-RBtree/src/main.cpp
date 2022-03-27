@@ -8,8 +8,11 @@ int main() {
     tree->insertar(1);
     tree->insertar(3);
 
-    tree->preOrder();
-    tree->postOrder();
+//    tree->preOrder();
+//    tree->postOrder();
+    tree->inOrder();
+
+    tree->eliminarNodo(3);
     tree->inOrder();
     return 0;
 }

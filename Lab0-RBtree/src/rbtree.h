@@ -3,7 +3,7 @@
 
 // Lista de colores del arbol
 enum Color {
-    RED, BLACK
+    RED, BLACK, DOUBLE_BLACK
 };
 
 struct Nodo {
@@ -27,6 +27,8 @@ private:
     Nodo *insertarNodo(Nodo *&, Nodo *&);
 
     void corregirArbol(Nodo *&);
+
+    void eliminarDoubleBlack(Nodo *&);
 
     static int getColor(Nodo *&);
 
