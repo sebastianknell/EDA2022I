@@ -146,7 +146,7 @@ void RBtree::corregirArbol(Nodo *&puntero) {
             }
         }
 
-            // El padre esta a la derecha
+        // El padre esta a la derecha
         else {
             Nodo *tio = abuelo->left;
 
@@ -226,8 +226,8 @@ void RBtree::eliminarDoubleBlack(Nodo *&nodo) {
                 std::swap(padre->color, hermano->color);
                 if (nodo == padre->left) rotarIzquierda(padre);
                 else rotarDerecha(padre);
-                if (padre->left == nodo) padre->left = nullptr;
-                else padre->right = nullptr;
+                if (nodo->father->left == nodo) nodo->father->left = nullptr;
+                else nodo->father->right = nullptr;
                 delete nodo;
                 setColor(hijo_lejano, BLACK);
             }
@@ -244,11 +244,6 @@ void RBtree::eliminarDoubleBlack(Nodo *&nodo) {
 
 void RBtree::eliminarNodo(int dato) {
     // Encontrar nodo
-    if (dato == root->dato) {
-        delete root;
-        root = nullptr;
-        return;
-    }
     auto curr = root;
     while (curr) {
         if (curr->left && dato < curr->dato) curr = curr->left;
@@ -271,26 +266,27 @@ void RBtree::eliminarNodo(int dato) {
             return;
         }
         else {
-            curr->color = DOUBLE_BLACK;
+            setColor(curr, DOUBLE_BLACK);
             eliminarDoubleBlack(curr);
         }
     }
     // Caso 2: Tiene un hijo
     if (!curr->left != !curr->right) {
-        if (curr->color == RED) {
+        auto child = curr->left ? curr->left : curr->right;
+        if (curr->color == RED || getColor(child) == RED) {
             // Unir al padre con el hijo
-            auto child = curr->left ? curr->left : curr->right;
             auto father = curr->father;
             if (curr == father->right) {
                 father->right = child;
             }
             else father->left = child;
+            setColor(child, getColor(curr));
             // Eliminar nodo
             delete curr;
             return;
         }
         else {
-            curr->color = DOUBLE_BLACK;
+            setColor(curr, DOUBLE_BLACK);
             eliminarDoubleBlack(curr);
         }
     }
