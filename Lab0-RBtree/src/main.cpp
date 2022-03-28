@@ -1,5 +1,12 @@
 #include "rbtree.h"
 
+void print(const vector<int> &arr) {
+    for (const auto &item : arr) {
+        cout << item << " ";
+    }
+    cout << endl;
+}
+
 int main() {
     auto tree = new RBtree();
     tree->insertar(4);
@@ -8,11 +15,12 @@ int main() {
     tree->insertar(1);
     tree->insertar(3);
 
-//    tree->preOrder();
-//    tree->postOrder();
-    tree->inOrder();
+//    tree->preorden();
+//    tree->posorden();
+    auto datos = tree->inorden();
+    print(datos);
 
-    tree->eliminarNodo(3);
-    tree->inOrder();
+//    tree->eliminarNodo(10);
+//    tree->inOrder();
     return 0;
 }

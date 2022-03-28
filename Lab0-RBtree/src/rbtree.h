@@ -1,6 +1,12 @@
 #ifndef RBTREE_H
 #define RBTREE_H
 
+#include <iostream>
+#include <algorithm>
+#include <vector>
+
+using namespace std;
+
 // Lista de colores del arbol
 enum Color {
     RED, BLACK, DOUBLE_BLACK
@@ -38,11 +44,11 @@ private:
 
     void rotarDerecha(Nodo *&);
 
-    void preOrderRec(Nodo *&);
+    void preOrderRec(Nodo *&, vector<int> &);
 
-    void postOrderRec(Nodo *&);
+    void postOrderRec(Nodo *&, vector<int> &);
 
-    void inOrderRec(Nodo *&);
+    void inOrderRec(Nodo *&, vector<int> &);
 
 public:
     RBtree();
@@ -51,11 +57,11 @@ public:
 
     void eliminarNodo(int);
 
-    void preOrder();
+    std::vector<int> preorden();
 
-    void postOrder();
+    std::vector<int> posorden();
 
-    void inOrder();
+    std::vector<int> inorden();
 
     ~RBtree();
 };

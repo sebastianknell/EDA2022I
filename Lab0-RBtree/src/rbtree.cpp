@@ -1,5 +1,3 @@
-#include <algorithm>
-#include <iostream>
 #include "rbtree.h"
 
 Nodo::Nodo(int dato) {
@@ -213,8 +211,9 @@ void RBtree::eliminarDoubleBlack(Nodo *&nodo) {
                 hijo_cercano = hermano->right;
                 hijo_lejano = hermano->left;
             }
-            // Caso 5: El hijo lejano del hermano es negro
+            // Caso 5: El hijo lejano del hermano es negro y el cercano rojo (por descarte)
             if (getColor(hijo_lejano) == BLACK) {
+                // TODO puede hallar si alguno es null
                 std::swap(hermano->color, hijo_cercano->color);
                 if (nodo == padre->left) rotarDerecha(hermano);
                 else rotarIzquierda(hermano);
@@ -223,14 +222,16 @@ void RBtree::eliminarDoubleBlack(Nodo *&nodo) {
 
             // Caso 6: El hijo lejano del hermano es rojo
             if (getColor(hijo_lejano) == RED) {
+                // TODO puede hallar si alguno es null
                 std::swap(padre->color, hermano->color);
                 if (nodo == padre->left) rotarIzquierda(padre);
                 else rotarDerecha(padre);
-                setColor(nodo, BLACK);
+                if (padre->left == nodo) padre->left = nullptr;
+                else padre->right = nullptr;
+                delete nodo;
                 setColor(hijo_lejano, BLACK);
             }
         }
-
     }
     else {
         // Caso 4: El hermano es rojo
@@ -306,38 +307,41 @@ void RBtree::eliminarNodo(int dato) {
     }
 }
 
-void RBtree::preOrderRec(Nodo *&puntero) {
+void RBtree::preOrderRec(Nodo *&puntero, vector<int> &datos) {
     if (!puntero) return;
-    std::cout << puntero->dato << " ";
-    preOrderRec(puntero->left);
-    preOrderRec(puntero->right);
+    datos.push_back(puntero->dato);
+    preOrderRec(puntero->left, datos);
+    preOrderRec(puntero->right, datos);
 }
 
-void RBtree::postOrderRec(Nodo *&puntero) {
+void RBtree::postOrderRec(Nodo *&puntero, vector<int> &datos) {
     if (!puntero) return;
-    preOrderRec(puntero->left);
-    preOrderRec(puntero->right);
-    std::cout << puntero->dato << " ";
+    postOrderRec(puntero->left, datos);
+    postOrderRec(puntero->right, datos);
+    datos.push_back(puntero->dato);
 }
 
-void RBtree::inOrderRec(Nodo *&puntero) {
+void RBtree::inOrderRec(Nodo *&puntero, vector<int> &datos) {
     if (!puntero) return;
-    preOrderRec(puntero->left);
-    std::cout << puntero->dato << " ";
-    preOrderRec(puntero->right);
+    inOrderRec(puntero->left, datos);
+    datos.push_back(puntero->dato);
+    inOrderRec(puntero->right, datos);
 }
 
-void RBtree::preOrder() {
-    preOrderRec(root);
-    std::cout << std::endl;
+std::vector<int> RBtree::preorden() {
+    vector<int> datos;
+    preOrderRec(root,datos);
+    return datos;
 }
 
-void RBtree::postOrder() {
-    postOrderRec(root);
-    std::cout << std::endl;
+std::vector<int> RBtree::posorden() {
+    vector<int> datos;
+    postOrderRec(root, datos);
+    return datos;
 }
 
-void RBtree::inOrder() {
-    inOrderRec(root);
-    std::cout << std::endl;
+std::vector<int> RBtree::inorden() {
+    vector<int> datos;
+    inOrderRec(root, datos);
+    return datos;
 }
