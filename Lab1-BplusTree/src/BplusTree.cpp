@@ -73,6 +73,12 @@ Node *BplusTree::split_node(Node *node, int key) {
         }
     }
 
+    if (node->isLeaf) {
+        auto temp = node->next;
+        node->next = brother;
+        brother->next = temp;
+    }
+
     brother->father = node->father;
     return brother;
 }
@@ -93,33 +99,30 @@ void BplusTree::split_up(Node *node, int key) {
         auto index = insert_ordered(node->father->keys, new_key);
         auto brother = split_node(node, new_key);
 
-        if (node->isLeaf) {
-            node->next = brother;
-        }
         // Asignar hijos del padre
         if (index + 1 >= node->father->childs.size())
             node->father->childs.push_back(brother);
         else node->father->childs.insert(node->father->childs.begin() + index + 1, brother);
     }
     else {
-        split_up(node->father, new_key);
         auto brother = split_node(node, new_key);
 
-        if (node->isLeaf) {
-            node->next = brother;
-        }
         // Encontrar posicion de nodo respecto al padre
         int index = 0;
         while (index < node->father->childs.size() && node->father->childs[index] != node) index++;
 
         // Insertar hermano al costado
-        if (index + 1 >= node->father->childs.size())
+        if (index + 1 >= node->father->childs.size()) {
             node->father->childs.push_back(brother);
+        }
         else node->father->childs.insert(node->father->childs.begin() + index + 1, brother);
+
+        split_up(node->father, new_key);
     }
 }
 
 void BplusTree::insertar(int key) {
+//    cout << "Insertando " << key << endl;
     if (!root) {
         root = new Node();
         root->keys.push_back(key);
@@ -130,18 +133,22 @@ void BplusTree::insertar(int key) {
     bool curr_updated;
     while (curr && !curr->isLeaf) {
         curr_updated = false;
-        if (key < curr->keys.front()) {
+        if (key <= curr->keys.front()) {
             curr = curr->childs[0];
             continue;
         }
         for (int i = 0; i < curr->keys.size() - 1; i++) {
-            if (key >= curr->keys[i] && key < curr->keys[i + 1]) {
+            if (key > curr->keys[i] && key <= curr->keys[i + 1]) {
                 curr = curr->childs[i + 1];
                 curr_updated = true;
                 break;
             }
         }
-        if (!curr_updated && key >= curr->keys.back()) curr = curr->childs.back();
+        if (!curr_updated && key > curr->keys.back()) curr = curr->childs.back();
+    }
+    if (curr == nullptr) {
+        cout << "Algo esta mal\n";
+        return;
     }
 
     // Caso 1: Si hay espacio insertar

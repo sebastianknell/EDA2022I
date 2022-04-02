@@ -11,6 +11,7 @@
 #include <iostream>
 #include <queue>
 #include <cmath>
+#include <stdexcept>
 
 using namespace std;
 
