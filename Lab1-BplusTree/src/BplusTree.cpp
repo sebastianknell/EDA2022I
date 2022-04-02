@@ -127,7 +127,9 @@ void BplusTree::insertar(int key) {
     }
     // Buscar nodo
     auto curr = root;
+    bool curr_updated;
     while (curr && !curr->isLeaf) {
+        curr_updated = false;
         if (key < curr->keys.front()) {
             curr = curr->childs[0];
             continue;
@@ -135,10 +137,11 @@ void BplusTree::insertar(int key) {
         for (int i = 0; i < curr->keys.size() - 1; i++) {
             if (key >= curr->keys[i] && key < curr->keys[i + 1]) {
                 curr = curr->childs[i + 1];
+                curr_updated = true;
                 break;
             }
         }
-        if (key >= curr->keys.back()) curr = curr->childs.back();
+        if (!curr_updated && key >= curr->keys.back()) curr = curr->childs.back();
     }
 
     // Caso 1: Si hay espacio insertar

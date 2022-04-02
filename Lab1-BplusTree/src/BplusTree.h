@@ -33,7 +33,7 @@ class BplusTree {
     static Node* split_node(Node* node, int key);
     void split_up(Node* node, int key);
 public:
-    explicit BplusTree(int node_size = 2);
+    explicit BplusTree(int node_size = 20);
     ~BplusTree();
     void insertar(int key);
     vector<int> bfs();
