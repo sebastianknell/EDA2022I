@@ -27,7 +27,7 @@ static int try_insert(const vector<int> &arr, const int key) {
     return i;
 }
 
-BplusTree::BplusTree() {
+BplusTree::BplusTree(int node_size): node_size(node_size) {
     root = nullptr;
 }
 
@@ -79,9 +79,9 @@ Node *BplusTree::split_node(Node *node, int key) {
 
 void BplusTree::split_up(Node *node, int key) {
     // Encontrar el indice del medio
-    auto middle = int(node->keys.size() / 2);
-    // Determinar que llave sube
-    auto new_key = middle == try_insert(node->keys, key) ? key : node->keys[middle];
+    insert_ordered(node->keys, key);
+    int middle = int(node->keys.size() / 2);
+    auto new_key = node->keys[middle];
 
     if (!node->father) {
         node->father = new Node(false);
@@ -92,7 +92,6 @@ void BplusTree::split_up(Node *node, int key) {
     if (node->father->keys.size() < node_size) {
         auto index = insert_ordered(node->father->keys, new_key);
         auto brother = split_node(node, new_key);
-        insert_ordered(brother->keys, key); // TODO move to split node
 
         if (node->isLeaf) {
             node->next = brother;
@@ -105,7 +104,6 @@ void BplusTree::split_up(Node *node, int key) {
     else {
         split_up(node->father, new_key);
         auto brother = split_node(node, new_key);
-        insert_ordered(brother->keys, key);
 
         if (node->isLeaf) {
             node->next = brother;

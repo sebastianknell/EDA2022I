@@ -14,7 +14,6 @@
 
 using namespace std;
 
-#define NODE_SIZE 2
 
 struct Node {
     bool isLeaf = true;
@@ -29,12 +28,12 @@ struct Node {
 
 class BplusTree {
     Node* root;
-    int node_size = NODE_SIZE;
+    int node_size;
 
-    Node* split_node(Node* node, int key);
+    static Node* split_node(Node* node, int key);
     void split_up(Node* node, int key);
 public:
-    BplusTree();
+    explicit BplusTree(int node_size = 2);
     ~BplusTree();
     void insertar(int key);
     vector<int> bfs();
