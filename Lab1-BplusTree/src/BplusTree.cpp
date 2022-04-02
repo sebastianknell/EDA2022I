@@ -4,23 +4,121 @@
 
 #include "BplusTree.h"
 
-static int insert_ordered(vector<int> &arr, const int key) {
-    auto iter = arr.begin();
-    while (*iter < key && iter != arr.end()){
-        if (key > *iter) iter++;
+static size_t insert_ordered(vector<int> &arr, const int key) {
+    if (arr.empty()) {
+        arr.push_back(key);
+        return 0;
     }
-    int index = distance(arr.begin(), iter);
+    auto iter = arr.begin();
+    while (*iter < key && iter != arr.end()) iter++;
+    auto index = distance(arr.begin(), iter);
     arr.insert(iter, key);
     return index;
 }
 
-static void print_arr(const vector<int> &arr) {
+void print_arr(const vector<int> &arr) {
     for (const auto &i : arr) cout << i << " ";
-    cout << endl;
+}
+
+// Get middle
+static int try_insert(const vector<int> &arr, const int key) {
+    int i = 0;
+    while (arr[i] < key) i++;
+    return i;
 }
 
 BplusTree::BplusTree() {
     root = nullptr;
+}
+
+BplusTree::~BplusTree() {
+    queue<Node*> queue;
+    queue.push(root);
+    while (!queue.empty()) {
+        auto curr = queue.front();
+        queue.pop();
+        for (const auto &child : curr->childs) {
+            queue.push(child);
+        }
+        delete curr;
+    }
+}
+
+Node *BplusTree::split_node(Node *node, int key) {
+    auto brother = new Node(node->isLeaf);
+    // Copiar nodos al hermano
+    auto iter = node->keys.begin();
+    while ( iter != node->keys.end()) {
+        // Solo copiar key que sube si es un nodo hoja
+        if (*iter == key) {
+            if (node->isLeaf) {
+                brother->keys.push_back(*iter);
+            }
+            node->keys.erase(iter);
+        }
+        else if (*iter > key) {
+            brother->keys.push_back(*iter); // las keys ya estan ordenadas
+            node->keys.erase(iter);
+        }
+        else iter++;
+    }
+    // Copiar hijos
+    if (!node->isLeaf) {
+        int i = 0;
+        while (i <= node->keys.size()) i++;
+        while (i < node->childs.size()) {
+            node->childs[i]->father = brother;
+            brother->childs.push_back(node->childs[i]);
+            node->childs.erase(node->childs.begin() + i);
+        }
+    }
+
+    brother->father = node->father;
+    return brother;
+}
+
+void BplusTree::split_up(Node *node, int key) {
+    // Encontrar el indice del medio
+    auto middle = int(node->keys.size() / 2);
+    // Determinar que llave sube
+    auto new_key = middle == try_insert(node->keys, key) ? key : node->keys[middle];
+
+    if (!node->father) {
+        node->father = new Node(false);
+        root = node->father;
+        node->father->childs.push_back(node);
+    }
+
+    if (node->father->keys.size() < node_size) {
+        auto index = insert_ordered(node->father->keys, new_key);
+        auto brother = split_node(node, new_key);
+        insert_ordered(brother->keys, key); // TODO move to split node
+
+        if (node->isLeaf) {
+            node->next = brother;
+        }
+        // Asignar hijos del padre
+        if (index + 1 >= node->father->childs.size())
+            node->father->childs.push_back(brother);
+        else node->father->childs.insert(node->father->childs.begin() + index + 1, brother);
+    }
+    else {
+        split_up(node->father, new_key);
+        auto brother = split_node(node, new_key);
+        insert_ordered(brother->keys, key);
+
+        if (node->isLeaf) {
+            node->next = brother;
+        }
+        // Encontrar posicion de nodo respecto al padre
+        int index = 0;
+        while (index < node->father->childs.size() && node->father->childs[index] != node) index++;
+
+        // Insertar hermano al costado
+        if (index + 1 >= node->father->childs.size())
+            node->father->childs.push_back(brother);
+        else node->father->childs.insert(node->father->childs.begin() + index + 1, brother);
+    }
 }
 
 void BplusTree::insertar(int key) {
@@ -32,17 +130,17 @@ void BplusTree::insertar(int key) {
     // Buscar nodo
     auto curr = root;
     while (curr && !curr->isLeaf) {
-        if (key <= curr->keys.front()) {
+        if (key < curr->keys.front()) {
             curr = curr->childs[0];
             continue;
         }
         for (int i = 0; i < curr->keys.size() - 1; i++) {
-            if (key > curr->keys[i] && key <= curr->keys[i+1]) {
-                curr = curr->childs[i+1];
+            if (key >= curr->keys[i] && key < curr->keys[i + 1]) {
+                curr = curr->childs[i + 1];
                 break;
             }
         }
-        if (key > curr->keys.back()) curr = curr->childs.back();
+        if (key >= curr->keys.back()) curr = curr->childs.back();
     }
 
     // Caso 1: Si hay espacio insertar
@@ -50,4 +148,32 @@ void BplusTree::insertar(int key) {
         insert_ordered(curr->keys, key);
         return;
     }
+    split_up(curr, key);
+}
+
+vector<int> BplusTree::bfs() {
+    queue<Node*> queue;
+    vector<int> result;
+    queue.push(root);
+//    int nodes = 1;
+//    int i = 1;
+    while (!queue.empty()) {
+        auto curr = queue.front();
+        queue.pop();
+        for (const auto &key : curr->keys)
+            result.push_back(key);
+        for (const auto &child : curr->childs)
+            queue.push(child);
+//        print_arr(curr->keys);
+//        if (i == nodes) {
+//            nodes *= 3;
+//            i = 0;
+//            cout << endl;
+//        }
+//        else {
+//            i++;
+//            cout << "\t";
+//        }
+    }
+    return result;
 }
