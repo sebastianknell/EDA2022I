@@ -32,6 +32,7 @@ BplusTree::BplusTree(int node_size): node_size(node_size) {
 }
 
 BplusTree::~BplusTree() {
+    // Hacer un bfs e ir eliminando nodos
     queue<Node*> queue;
     queue.push(root);
     while (!queue.empty()) {
@@ -89,12 +90,14 @@ void BplusTree::split_up(Node *node, int key) {
     int middle = int(node->keys.size() / 2);
     auto new_key = node->keys[middle];
 
+    // Crear padre si no existe
     if (!node->father) {
         node->father = new Node(false);
         root = node->father;
         node->father->childs.push_back(node);
     }
 
+    // Si hay espacio en el padre insertar y dividir nodo
     if (node->father->keys.size() < node_size) {
         auto index = insert_ordered(node->father->keys, new_key);
         auto brother = split_node(node, new_key);
@@ -104,6 +107,7 @@ void BplusTree::split_up(Node *node, int key) {
             node->father->childs.push_back(brother);
         else node->father->childs.insert(node->father->childs.begin() + index + 1, brother);
     }
+    // Si no hay espacio, dividir al nodo y asignar nuevo hijo al padre (temporalmente). Luego dividir al padre
     else {
         auto brother = split_node(node, new_key);
 
@@ -117,12 +121,12 @@ void BplusTree::split_up(Node *node, int key) {
         }
         else node->father->childs.insert(node->father->childs.begin() + index + 1, brother);
 
+        // Dividir al padre
         split_up(node->father, new_key);
     }
 }
 
 void BplusTree::insertar(int key) {
-//    cout << "Insertando " << key << endl;
     if (!root) {
         root = new Node();
         root->keys.push_back(key);
@@ -146,16 +150,13 @@ void BplusTree::insertar(int key) {
         }
         if (!curr_updated && key > curr->keys.back()) curr = curr->childs.back();
     }
-    if (curr == nullptr) {
-        cout << "Algo esta mal\n";
-        return;
-    }
 
     // Caso 1: Si hay espacio insertar
     if (curr->keys.size() < node_size) {
         insert_ordered(curr->keys, key);
         return;
     }
+    // Empezar el proceso recursivo
     split_up(curr, key);
 }
 
@@ -163,8 +164,6 @@ vector<int> BplusTree::bfs() {
     queue<Node*> queue;
     vector<int> result;
     queue.push(root);
-//    int nodes = 1;
-//    int i = 1;
     while (!queue.empty()) {
         auto curr = queue.front();
         queue.pop();
@@ -172,16 +171,6 @@ vector<int> BplusTree::bfs() {
             result.push_back(key);
         for (const auto &child : curr->childs)
             queue.push(child);
-//        print_arr(curr->keys);
-//        if (i == nodes) {
-//            nodes *= 3;
-//            i = 0;
-//            cout << endl;
-//        }
-//        else {
-//            i++;
-//            cout << "\t";
-//        }
     }
     return result;
 }
