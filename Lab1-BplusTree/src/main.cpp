@@ -18,7 +18,7 @@ void test1() {
 
 // Funciona
 void test2() {
-    auto tree = BplusTree(2);
+    auto tree = BplusTree(3);
     tree.insertar(20);
     tree.insertar(15);
     tree.insertar(12);
@@ -30,11 +30,16 @@ void test2() {
     auto result = tree.bfs();
     print_arr(result);
     cout << endl;
+
+    tree.eliminar(40);
+    result = tree.bfs();
+    print_arr(result);
+    cout << endl;
 }
 
 // Funciona
 void test3() {
-    auto tree = BplusTree(3);
+    auto tree = BplusTree(4);
     tree.insertar(1);
     tree.insertar(4);
     tree.insertar(7);
@@ -54,7 +59,7 @@ void test3() {
 
 // Funciona
 void test4() {
-    auto tree = BplusTree(2);
+    auto tree = BplusTree(3);
     tree.insertar(50);
     tree.insertar(45);
     tree.insertar(40);
@@ -62,7 +67,7 @@ void test4() {
     tree.insertar(51);
     tree.insertar(46);
     tree.insertar(47);
-    tree.insertar(46); // El 46 se tiene que ir hacia la izquierda
+    tree.insertar(46);
     auto result = tree.bfs();
     print_arr(result);
     cout << endl;
@@ -72,7 +77,7 @@ void test5(int n) {
     int max;
     max = 1000;
     srand(time(nullptr));
-    auto tree = new BplusTree(10);
+    auto tree = new BplusTree(11);
     for (int i = 0; i < n; i++) {
         tree->insertar(rand() % max);
     }
@@ -82,7 +87,7 @@ void test5(int n) {
     delete tree;
 }
 
-int main() {
+/*int main() {
     // Read file
     std::ifstream texto;
     texto.open("../output.txt");
@@ -114,12 +119,12 @@ int main() {
     }
     cout << tiempoInseccion << endl;
     return 0;
-}
+}*/
 
-/*int main() {
+int main() {
 //    test1();
-//    test2();
+    test2();
 //    test3();
 //    test4();
-    test5(1000);
-}*/
+//    test5(1000);
+}
