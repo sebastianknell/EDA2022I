@@ -34,7 +34,7 @@ static void re_sort(vector<int> &arr) {
 BplusTree::BplusTree(int orden): orden(orden) {
     assert(orden > 2);
     root = nullptr;
-    min = ceil(orden / 2) - 1;
+    min = ceil(double(orden / 2.0)) - 1;
     max = orden - 1;
 }
 
@@ -182,21 +182,21 @@ key_pos BplusTree::find_brother(Node *node) {
     if (index == 0) {
         brother = node->father->childs[index+1];
         pos = RIGHT;
-        if (node->father->childs[index+1]->keys.size() >= min)
+        if (brother->keys.size() > min)
             brother_index = 0;
     }
     // Si es el ultimo, prestar de la izquierda
     else if (index == node->father->childs.size()-1) {
         brother = node->father->childs[index-1];
-        if (node->father->childs[index-1]->keys.size() >= min)
+        if (brother->keys.size() > min)
             brother_index = brother->keys.size() - 1;
     }
     // Sino prestar de la izquierda o de la derecha
     else {
         brother = node->father->childs[index-1];
-        if (node->father->childs[index-1]->keys.size() >= min)
+        if (brother->keys.size() > min)
             brother_index = brother->keys.size() - 1;
-        else if (node->father->childs[index+1]->keys.size() >= min) {
+        else if (node->father->childs[index+1]->keys.size() > min) {
             brother = node->father->childs[index+1];
             pos = RIGHT;
             brother_index = 0;
@@ -209,10 +209,28 @@ key_pos BplusTree::find_brother(Node *node) {
     };
 }
 
-void BplusTree::removeInternalNode(key_pos pos) {
-    auto curr = pos.node->childs[pos.index + 1];
-    while (!curr->isLeaf) curr = curr->childs.front();
-    pos.node->keys[pos.index] = curr->keys.front();
+void BplusTree::removeInternalNode(int key) {
+    // Buscar nodo
+    auto curr = root;
+    int i;
+    bool found = false;
+    while (curr && !curr->isLeaf) {
+        i = 0;
+        for (; i < curr->keys.size(); ++i) {
+            if (key < curr->keys[i]) break;
+            else if (key == curr->keys[i]) {
+                found = true;
+                break;
+            }
+        }
+        if (found) break;
+        curr = curr->childs[i];
+    }
+    if (found) {
+        auto succesor = curr->childs[i + 1];
+        while (!succesor->isLeaf) succesor = succesor->childs.front();
+        curr->keys[i] = succesor->keys.front();
+    }
 }
 
 void BplusTree::fixTree(Node *curr) {
@@ -233,7 +251,8 @@ void BplusTree::fixTree(Node *curr) {
                 brother_pos.node->keys.pop_back();
                 // El mayor hijo del hermano se va al inicio del actual
                 curr->childs.insert(curr->childs.begin(), brother_pos.node->childs.back());
-                brother_pos.node->keys.pop_back();
+                curr->childs.front()->father = curr;
+                brother_pos.node->childs.pop_back();
             }
             // Rotar izquierda
             else {
@@ -242,62 +261,78 @@ void BplusTree::fixTree(Node *curr) {
                 // El hermano derecho le da una llave al padre
                 curr->father->keys[index+1] = brother_pos.node->keys.front();
                 brother_pos.node->keys.erase(brother_pos.node->keys.begin());
-                // El menor hijo del hermano se va al inicio del actual
-                curr->childs.insert(curr->childs.begin(), brother_pos.node->childs.front());
+                // El menor hijo del hermano se va al final del actual
+                curr->childs.push_back(brother_pos.node->childs.front());
+                curr->childs.back()->father = curr;
                 brother_pos.node->childs.erase(brother_pos.node->childs.begin());
             }
             return;
         }
         // Si no puede prestar, hacer merge
         else {
-            if (brother_pos.pos == LEFT) merge(brother_pos.node, curr);
-            else merge(curr, brother_pos.node);
+            bool is_root_updated;
+            if (brother_pos.pos == LEFT) {
+                is_root_updated = merge(brother_pos.node, curr);
+                curr = brother_pos.node;
+            }
+            else is_root_updated = merge(curr, brother_pos.node);
+            if (is_root_updated) return;
         }
     }
+    if (curr == root) return;
+    if (curr->keys.size() >= min) return;
     fixTree(curr->father);
 }
 
 // Une el nodo b al a. Se asume que b esta a la derecha de a
-void BplusTree::merge(Node *node_a, Node *node_b) {
-    if (!node_a->father || !node_b->father) return;
-    if (node_a->father != node_b->father) return;
+bool BplusTree::merge(Node *node_a, Node *node_b) {
+    if (!node_a->father || !node_b->father) return false;
+    if (node_a->father != node_b->father) return false;
     for (auto key : node_b->keys) {
         node_a->keys.push_back(key);
     }
     // Copiar hijos
     if (!node_a->isLeaf) {
-        for (auto child : node_b->childs) {
+        for (auto &child : node_b->childs) {
+            child->father = node_a;
             node_a->childs.push_back(child);
         }
+//        for (int i = 0; i < node_b->childs.size(); i++) {
+//
+//        }
     }
     else
         node_a->next = node_b->next;
 
     if (node_a->father == root && node_a->father->keys.size() == 1) {
         root = node_a;
+        if ((int)node_a->keys.size() < (int)node_a->childs.size() - 1) {
+            insert_ordered(node_a->keys, node_a->father->keys.front());
+        }
         delete node_a->father;
         node_a->father = nullptr;
+        delete node_b;
+        return true;
     }
     else {
         int index = find_child_index(node_b);
         node_a->father->keys.erase(node_a->father->keys.begin() + index - 1);
         node_a->father->childs.erase(node_a->father->childs.begin() + index);
+        delete node_b;
     }
-    delete node_b;
+    return false;
 }
 
 void BplusTree::eliminar(int key) {
     // Buscar nodo
-    Node* internal_node = nullptr;
-    int internal_node_index;
+    bool has_internal_node = false;
     auto curr = root;
     while (curr && !curr->isLeaf) {
         int i = 0;
         for (; i < curr->keys.size(); ++i) {
             if (key < curr->keys[i]) break;
             else if (key == curr->keys[i]) {
-                internal_node = curr;
-                internal_node_index = i;
+                has_internal_node = true;
             }
         }
         curr = curr->childs[i];
@@ -330,7 +365,7 @@ void BplusTree::eliminar(int key) {
     // Si el nodo es valido, terminar
     if (curr->keys.size() >= min) {
         // Eliminar nodo interno si existe
-        if (internal_node) removeInternalNode({internal_node, internal_node_index});
+        if (has_internal_node) removeInternalNode(key);
         return;
     }
 
@@ -339,25 +374,36 @@ void BplusTree::eliminar(int key) {
     if (brother_pos.node) {
         // Si el hermano puede prestar, prestar, remover nodo interno y terminar
         if (brother_pos.index != -1) {
-            if (brother_pos.pos == LEFT)
+            if (brother_pos.pos == LEFT) {
                 curr->keys.insert(curr->keys.begin(), brother_pos.node->keys[brother_pos.index]);
-            else curr->keys.push_back(brother_pos.node->keys[brother_pos.index]);
-            brother_pos.node->keys.erase(brother_pos.node->keys.begin() + brother_pos.index);
-            // Agregar clave mediana del hermano al padre
-            insert_ordered(curr->father->keys, brother_pos.node->keys[int(brother_pos.node->keys.size() / 2)]);
-            if (internal_node) removeInternalNode({internal_node, internal_node_index});
+                brother_pos.node->keys.erase(brother_pos.node->keys.begin() + brother_pos.index);
+                auto index = find_child_index(brother_pos.node);
+                curr->father->keys[index] = curr->keys.front();
+            }
+            else {
+                curr->keys.push_back(brother_pos.node->keys[brother_pos.index]);
+                brother_pos.node->keys.erase(brother_pos.node->keys.begin() + brother_pos.index);
+                auto index = find_child_index(brother_pos.node);
+                curr->father->keys[index - 1] = curr->keys.front();
+            }
+            if (has_internal_node) removeInternalNode(key);
             return;
         }
         // Sino puede prestar, hacer merge
         else {
-            if (brother_pos.pos == LEFT) merge(brother_pos.node, curr);
-            else merge(curr, brother_pos.node);
+            bool is_root_updated;
+            if (brother_pos.pos == LEFT) {
+                is_root_updated = merge(brother_pos.node, curr);
+                curr = brother_pos.node;
+            }
+            else is_root_updated = merge(curr, brother_pos.node);
+            if (is_root_updated) return;
         }
     }
 
     // Iniciar proceso recursivo
     fixTree(curr->father);
-    if (internal_node) removeInternalNode({internal_node, internal_node_index});
+    if (has_internal_node) removeInternalNode(key);
 }
 
 vector<int> BplusTree::bfs() {

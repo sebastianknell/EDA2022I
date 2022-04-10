@@ -32,6 +32,12 @@ void test2() {
     cout << endl;
 
     tree.eliminar(40);
+    tree.eliminar(20);
+    tree.eliminar(15);
+    tree.eliminar(65);
+    tree.eliminar(8);
+    tree.eliminar(12);
+    tree.eliminar(1);
     result = tree.bfs();
     print_arr(result);
     cout << endl;

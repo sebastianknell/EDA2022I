@@ -40,9 +40,9 @@ class BplusTree {
     static Node* split_node(Node* node, int key);
     void split_up(Node* node, int key);
     int find_child_index(Node* node);
-    void merge(Node* node_a, Node* node_b);
+    bool merge(Node* node_a, Node* node_b);
     key_pos find_brother(Node *node);
-    void removeInternalNode(key_pos pos);
+    void removeInternalNode(int key);
     void fixTree(Node* curr);
 public:
     explicit BplusTree(int orden = 21);
